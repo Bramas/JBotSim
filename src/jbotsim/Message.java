@@ -12,6 +12,12 @@
 package jbotsim;
 
 
+import jbotsim.event.PropertyListener;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 public final class Message extends _Properties{
     protected Node sender;
     protected Node destination;
@@ -19,20 +25,22 @@ public final class Message extends _Properties{
     protected boolean retryMode;
 
     public Message(){
-        this(null, null, "");
+        this("");
     }
     /**
      * @param content The content of this message. It may be an object of any class, whose
      *                reference is going to be shared between sender and destination (no copy).
      */
     public Message(Object content){
-        this(null, null, content);
+        this.content = content;
     }
-    Message(Node sender, Node destination, Object content){
-        assert(destination!=null);
-        this.sender = sender;
-        this.destination=destination;
-        this.content=content;
+
+    Message(Node sender, Node destination, Message message){
+        this.sender            = sender;
+        this.destination       = destination;
+        this.content           = message.content;
+        this.properties        = new HashMap<>(message.properties);
+        this.propertyListeners = new ArrayList<>(message.propertyListeners);
     }
     /**
      * The sender of this message.
