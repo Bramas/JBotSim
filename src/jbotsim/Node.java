@@ -14,6 +14,7 @@ package jbotsim;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 
@@ -168,7 +169,7 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
         setProperty("color", color); // Used for property notification
     }
     /**
-     * Sets the color of this node.
+     * Returns the color of this node.
      */
     public int getIntColor(){
         return basicColors.indexOf(color);
@@ -193,7 +194,15 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
         return basicColors;
     }
     /**
-     * Sets the icon of this node. The image should be in a resource of the application
+     * Sets the icon of this node. The argument must be an absolute path to
+     * either a file in the file system, or a resource in the application.
+     * Examples:
+     * <pre>
+     * {@code
+     *     node.setIcon("/filesystem/path/to/image");
+     *     node.setIcon("/package/path/to/image");
+     * }
+     * </pre>
      */
     public void setIcon(String fileName){
         setProperty("icon", fileName);
@@ -227,7 +236,7 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
         return state;
     }
     /**
-     * Sets the state of this node. This text will appear as a tooltip 
+     * Sets the state of this node. This text will appear as a tooltip
      * when the mouse cursor is held some time over the node.
      */
     public void setState(Object state){
@@ -241,7 +250,7 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
         return communicationRange;
     }
     /**
-     * Activates the wireless capabilities of this node and sets 
+     * Activates the wireless capabilities of this node and sets
      * its communication range to the specified radius. This
      * determines the distance up to which this node can <i>send</i> messages
      * to other nodes.
@@ -466,8 +475,8 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
     }
     /**
      * Returns a list containing all adjacent links of the specified type.
-     * @param directed <tt>true</tt> for directed, <tt>false</tt> for 
-     * undirected. The returned list can be subsequently modified without 
+     * @param directed <tt>true</tt> for directed, <tt>false</tt> for
+     * undirected. The returned list can be subsequently modified without
      * effect on the topology.
      */
     public List<Link> getLinks(boolean directed){
@@ -475,7 +484,7 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
     }
     /**
      * Returns a list containing every node serving as source for an adjacent
-     * directed link. The returned list can be subsequently modified 
+     * directed link. The returned list can be subsequently modified
      * without effect on the topology.
      * @return A list containing the neighbors, with possible duplicates
      * when several links come from a same neighbor.
@@ -487,7 +496,7 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
         return neighbors;
     }
     /**
-     * Returns a list containing every node serving as destination for an 
+     * Returns a list containing every node serving as destination for an
      * adjacent directed link. The returned list can be subsequently
      * modified without effect on the topology.
      * @return A list containing the neighbors, with possible duplicates
@@ -561,7 +570,6 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
      */
     public void send(Node destination, Message message){
         Message m = new Message(this, destination, message);
-        m.retryMode = message.retryMode;
         sendQueue.add(m);
     }
     /**
@@ -582,8 +590,9 @@ public class Node extends _Properties implements ClockListener, Comparable<Node>
      */
     public void sendRetry(Node destination, Message message){
         assert(destination!=null);
-        message.retryMode=true;
-        send(destination, message);
+        Message m = new Message(message);
+        m.retryMode=true;
+        send(destination, m);
     }
     /**
      * Same as <tt>sendRetry()</tt>, but the content is directly given as parameter

@@ -1,11 +1,11 @@
 /*
  * This file is part of JBotSim.
- * 
+ *
  *    JBotSim is free software: you can redistribute it and/or modify it
  *    under the terms of the GNU Lesser General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *  
+ *
  *    Authors:
  *    Arnaud Casteigts        <arnaud.casteigts@labri.fr>
  */
@@ -21,8 +21,10 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -55,31 +57,35 @@ public class JNode extends JButton implements MouseListener, MouseMotionListener
         updateIcon();
         update();
     }
-    public void updateIcon(){
-        Toolkit tk = Toolkit.getDefaultToolkit();
-
+    public void updateIcon() {
+        String path = (String)node.getProperty("icon");
         try {
-            Object iconProperty = node.getProperty("icon");
-            if(iconProperty instanceof Path) {
-                icon = ImageIO.read(((Path) iconProperty).toUri().toURL());
-            } else {
-                icon = tk.getImage(getClass().getResource((String)iconProperty));
-            }
+            URL iconUrl = getClass().getResource(path);
+            if(iconUrl != null)
+                icon = Toolkit.getDefaultToolkit().getImage(iconUrl);
+            else
+                icon = ImageIO.read(Paths.get(path).toUri().toURL());
         }
         catch(Exception e) {
             if(node.hasProperty("icon")){
-                System.err.println("Unable to set icon: "+node.getProperty("icon"));
+                System.err.println("Unable to set icon: "+path);
                 System.err.println(e.getMessage());
             }
-            icon = tk.getImage(getClass().getResource("/jbotsim/ui/circle.png"));
+            setDefaultIcon();
+            return;
         }
         updateIconSize();
-        setBounds((int) node.getX() - drawSize, (int) node.getY() - drawSize, drawSize*2, drawSize*2);
+    }
+    private void setDefaultIcon() {
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        icon = tk.getImage(getClass().getResource("/jbotsim/ui/circle.png"));
+        updateIconSize();
     }
     public void updateIconSize(){
         drawSize = (int)(node.getSize() * camheight/(camheight-node.getZ()));
         scaledIcon = icon.getScaledInstance(drawSize*2, drawSize*2, Image.SCALE_DEFAULT);
         setIcon(new ImageIcon(scaledIcon));
+        setBounds((int) node.getX() - drawSize, (int) node.getY() - drawSize, drawSize*2, drawSize*2);
     }
     public void update(){
         if (node.getZ() != zcoord){
