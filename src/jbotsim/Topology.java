@@ -48,6 +48,8 @@ public class Topology extends _Properties implements ClockListener{
     public static enum RefreshMode {CLOCKBASED, EVENTBASED};
     RefreshMode refreshMode = RefreshMode.EVENTBASED;
 
+    protected ClockManager clockManager;
+
     /**
      * Creates a topology.
      */
@@ -55,15 +57,34 @@ public class Topology extends _Properties implements ClockListener{
         this(600, 400);
     }
     /**
+     * Creates a topology and sets its running status (running/paused).
+     */
+    public Topology(boolean toBeStarted){
+        this(600, 400, toBeStarted);
+    }
+    /**
      * Creates a topology of given dimensions.
      */
     public Topology(int width, int height){
+      this(width, height, true);
+    }
+    /**
+     * Creates a topology of given dimensions.
+     */
+    public Topology(int width, int height, boolean toBeStarted){
         setMessageEngine(new MessageEngine());
         setNodeScheduler(new DefaultNodeScheduler());
         setDimensions(width, height);
         clock = new Clock(this);
         resetTime();
+        clockManager = new DefaultClockManager(clock);
+
+
+        if (toBeStarted)
+            clockManager.start();
+
     }
+
     /**
     * Returns the node class corresponding to that name.
     */
@@ -287,6 +308,12 @@ public class Topology extends _Properties implements ClockListener{
                 n.onStart();
             for (StartListener listener : startListeners)
                 listener.onStart();
+
+            if(isStarted())
+              if(!isRunning())
+                resume();
+            else
+              start();
         });
     }
     /**
@@ -312,14 +339,7 @@ public class Topology extends _Properties implements ClockListener{
         clock.step();
     }
 
-    /**
-    * Performs infinitly many steps
-    */
-    public void runForever(){
-      while(true) {
-        step();
-      }
-    }
+
 
     /**
      * Adds the specified node to this topology. The location of the node
@@ -343,7 +363,13 @@ public class Topology extends _Properties implements ClockListener{
     */
     private void abortIfInsideRound() {
         if(clock.isInsideRound()) {
-            throw new RuntimeException("You cannot modify the topology in a middle of a round");
+            try {
+              throw new RuntimeException("You cannot modify the topology in a middle of a round");
+            } catch(Exception e) {
+              e.printStackTrace();
+
+                throw new RuntimeException("You cannot modify the topology in a middle of a round");
+            }
         }
     }
     /**
@@ -846,4 +872,74 @@ public class Topology extends _Properties implements ClockListener{
             s=s.substring(s.indexOf("\n")+1);
         }
     }
+
+    public void setClockManager(ClockManager cm) {
+      boolean running = clockManager.isRunning();
+      boolean started = clockManager.isStarted();
+      clockManager.pause();
+      clockManager = cm;
+      if(started) {
+        clockManager.start();
+      }
+      
+      if(running && !clockManager.isRunning()) {
+        clockManager.resume();
+      } else if(!running && clockManager.isRunning()) {
+        clockManager.pause();
+      }
+
+    }
+
+
+    // Deprecated Methods
+
+    /**
+     * Returns the global duration of a round in this topology (in millisecond).
+     * @return The duration
+     */
+    public int getClockSpeed(){
+      return clockManager.getTimeUnit();
+    }
+
+    /**
+     * Sets the global duration of a round in this topology (in millisecond).
+     * @param period The desired duration
+     */
+    public void setClockSpeed(int period){
+        clockManager.setTimeUnit(period);
+    }
+
+    /**
+     * Indicates whether the internal clock is currently running or in pause.
+     * @return <tt>true</tt> if running, <tt>false</tt> if paused.
+     */
+    public boolean isRunning(){
+        return clockManager.isRunning();
+    }
+
+    /**
+     * Pauses the clock (or increments the pause counter).
+     */
+    public void pause(){
+        clockManager.pause();
+    }
+
+    /**
+     * Resumes the clock (or decrements the pause counter).
+     */
+    public void resume(){
+        clockManager.resume();
+    }
+
+    /**
+     * Reset the color and width of nodes and links, then calls the
+     * onStart() method on each node.
+     */
+    public void start(){
+        clockManager.start();
+    }
+    public boolean isStarted() {
+        return clockManager.isStarted();
+    }
+
 }

@@ -29,6 +29,9 @@ class Clock {
     Integer time=0;
     private boolean insideRound;
 
+    private Object roundLock = new Object();
+
+
     Clock(Topology topology){
         this.tp = topology;
         insideRound = false;
@@ -39,25 +42,27 @@ class Clock {
      * Performs a single round
      */
     public void step() {
-      if(insideRound) {
-        throw new RuntimeException("You cannot call step() inside a round");
-      }
-      insideRound = true;
-      time++;
-      // Delivers messages first
-      tp.getMessageEngine().onClock();
-      // Then give the hand to the nodes
-      tp.getNodeScheduler().onClock(tp);
-      // Then to the topology itself
-      tp.onClock();
-      // Finally, to all other listeners whose countdown has expired
-      for (ClockListener cl : getExpiredListeners()) {
-          cl.onClock();
-          countdown.put(cl, listeners.get(cl)); // reset countdown
-      }
-      insideRound = false;
-      while(!toBeRun.isEmpty()){
-        toBeRun.poll().run();
+      synchronized(roundLock) {
+        if(insideRound) {
+          throw new RuntimeException("You cannot call step() inside a round");
+        }
+        insideRound = true;
+        time++;
+        // Delivers messages first
+        tp.getMessageEngine().onClock();
+        // Then give the hand to the nodes
+        tp.getNodeScheduler().onClock(tp);
+        // Then to the topology itself
+        tp.onClock();
+        // Finally, to all other listeners whose countdown has expired
+        for (ClockListener cl : getExpiredListeners()) {
+            cl.onClock();
+            countdown.put(cl, listeners.get(cl)); // reset countdown
+        }
+        insideRound = false;
+        while(!toBeRun.isEmpty()){
+          toBeRun.poll().run();
+        }
       }
     }
 
@@ -109,10 +114,13 @@ class Clock {
     public void runAfter(Runnable r){
         // if we are in a middle of a round save the runnable to run it
         // at the end of the round, otherwise run it now.
-        if(insideRound)
-            toBeRun.add(r);
-        else
-            r.run();
+
+        synchronized(roundLock) {
+            if(insideRound)
+                toBeRun.add(r);
+            else
+                r.run();
+        }
     }
 
     /**

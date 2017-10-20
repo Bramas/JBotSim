@@ -12,7 +12,7 @@ public class Main {
     static final int nodeCount = 100;
 
     public static void main(String[] args) {
-        Topology tp = new Topology();
+        Topology tp = new Topology(false);
         tp.setDefaultNodeModel(BroadcastingNode.class);
         BroadcastingNode.nodeCount = nodeCount;
 
@@ -25,9 +25,8 @@ public class Main {
             BroadcastingNode.informedNodeCount = 0;
             tp.getNodes().get(0).onSelection();
         });
-
+        tp.start();
         tp.restart();
-        tp.runForever();
     }
 
     // Deploy a few nodes to save the user some time

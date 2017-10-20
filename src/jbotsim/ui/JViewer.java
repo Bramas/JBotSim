@@ -21,6 +21,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jbotsim.Topology;
+import jbotsim.ClockManager;
 import jbotsimx.format.tikz.Tikz;
 
 import javax.swing.*;
@@ -33,7 +34,7 @@ import java.awt.event.ActionListener;
  * remove a communication range or sensing range tuners (slider bars), or to
  * pause/resume the system clock.getTopology()
  */
-public class JViewer implements CommandListener, ChangeListener{
+public class JViewer implements CommandListener, ChangeListener, ClockManager {
     protected JTopology jtp;
     protected int width=600;
     protected JSlider slideBar = new JSlider(0, width);
@@ -102,7 +103,7 @@ public class JViewer implements CommandListener, ChangeListener{
         jtp.addCommand("Execute a single step");
         jtp.addCommand("Restart nodes");
         jtp.addCommand("Export topology");
-           jtp.addCommandListener(this);
+        jtp.addCommandListener(this);
         if (windowed){ // This JViewer creates its own window
                window=new JFrame();
                window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -116,7 +117,7 @@ public class JViewer implements CommandListener, ChangeListener{
             });
         }
         slideBar.addChangeListener(this);
-        start();
+        jtp.topo.setClockManager(this);
     }
     /**
      * Returns the jtopology attached to this viewer. Obtaining the reference
@@ -220,16 +221,8 @@ public class JViewer implements CommandListener, ChangeListener{
     public void start(){
         if (! isStarted) {
             isStarted = true;
-            restart();
+            timer.start();
         }
-    }
-    /**
-     * Causes the onStart() method to be called again on each node (and each StartListener)
-     */
-    public void restart(){
-        pause();
-        jtp.topo.restart();
-        resume();
     }
 
     public boolean isStarted() {

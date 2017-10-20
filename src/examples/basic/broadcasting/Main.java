@@ -8,11 +8,12 @@ import jbotsim.ui.JViewer;
  */
 public class Main {
     public static void main(String[] args) {
-        Topology tp = new Topology();
-        JViewer viewer = new JViewer(tp);
+        Topology tp = new Topology(false);
+        new JViewer(tp);
         tp.setDefaultNodeModel(BroadcastingNode.class);
-        viewer.setTimeUnit(500); // slow on purpose (500 ms per round)
+        tp.setClockSpeed(500); // slow on purpose (500 ms per round)
         deployNodes(tp); // optional
+        tp.start();
     }
 
     // Deploy a few nodes to save the user some time
